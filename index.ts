@@ -1,0 +1,161 @@
+type ValeResponse = {
+  excessao: any;
+  descricaoOrigem: string;
+  descricaoDestino: string;
+  dataViagemPrevista: number;
+  dataViagemProgramada: number;
+  dataViagemVoltaPrevista: number;
+  dataViagemVoltaProgramada: number;
+  quantidadePassageiros: number;
+  passagensIda: Array<{
+    tipo: string;
+    tokenCompra: string;
+    idOrigem: number;
+    idDestino: number;
+    descricaoPrefixoTrem: string;
+    descricaoTrem: string;
+    descricaoOrigem: string;
+    descricaoJuncao: any;
+    descricaoDestino: string;
+    partidaProgramada: number;
+    chegadaProgramada: number;
+    horaPartidaPrevista: string;
+    horaPartidaProgramada: string;
+    partidaPrevista: number;
+    chegadaPrevista: number;
+    horaChegadaPrevista: string;
+    horaChegadaProgramada: string;
+    descricaoClasse: string;
+    indicadorClasseCadeirante: string;
+    idClasse: number;
+    qtdTotal: number;
+    valorTotal: number;
+    descricaoSubTrechos: Array<any>;
+  }>;
+  passagensVolta: Array<{
+    tipo: string;
+    tokenCompra: string;
+    idOrigem: number;
+    idDestino: number;
+    descricaoPrefixoTrem: string;
+    descricaoTrem: string;
+    descricaoOrigem: string;
+    descricaoJuncao: any;
+    descricaoDestino: string;
+    partidaProgramada: number;
+    chegadaProgramada: number;
+    horaPartidaPrevista: string;
+    horaPartidaProgramada: string;
+    partidaPrevista: number;
+    chegadaPrevista: number;
+    horaChegadaPrevista: string;
+    horaChegadaProgramada: string;
+    descricaoClasse: string;
+    indicadorClasseCadeirante: string;
+    idClasse: number;
+    qtdTotal: number;
+    valorTotal: number;
+    descricaoSubTrechos: Array<any>;
+  }>;
+  buscarPorSubTrecho: any;
+};
+
+const DEPART_DATE = new Date("2025-02-28");
+const RETURN_DATE = new Date("2025-03-05");
+
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat("pt-BR").format(date);
+
+const formatJourney = (journey: any) => {
+  if (!journey) return "*Não encontrado*";
+  const date = formatDate(new Date(journey?.partidaProgramada || 0));
+  const price = `R$ ${((journey?.valorTotal as number) || 0)
+    .toFixed(2)
+    .replace(".", ",")}`;
+  return `${date} 💸 **Preço:** ${price} 💼 **Classe:** ${
+    journey?.descricaoClasse || "-"
+  }`;
+};
+
+const sendAlert = async (message: string) => {
+  console.log(message);
+};
+
+const fetchJourney = async (date: Date) => {
+  try {
+    const resp = await fetch(
+      "https://tremdepassageiros.vale.com/sgpweb/rest/externo/VendaInternet/publico/pesquisaPassagem",
+      {
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          codigoFerrovia: "03",
+          codigoLocalOrigem: 7185,
+          codigoLocalDestino: 7172,
+          detalheVenda: [{ detalhe: 33, qtd: 1, funcionario: false }],
+          dataIda: date.getTime(),
+          codigoClasse: 44,
+        }),
+        method: "POST",
+      }
+    );
+    if (!resp.ok) {
+      await sendAlert(
+        [
+          "😵‍💫 Bad response!",
+          "```",
+          JSON.stringify(Object.fromEntries(resp.headers), null, 2),
+          "```",
+          "```",
+          await resp.text(),
+          "```",
+        ].join("\n")
+      );
+      return null;
+    }
+    const data = await resp.json();
+    return data as ValeResponse;
+  } catch (error) {
+    await sendAlert(["😵‍💫 Fetch error!", "```", error, "```"].join("\n"));
+    return null;
+  }
+};
+
+const fetchJourneys = async () => {
+  const [departData, returnData] = await Promise.all([
+    fetchJourney(DEPART_DATE),
+    fetchJourney(RETURN_DATE),
+  ]);
+  if (!departData || !returnData) return null;
+  return {
+    depart: departData.passagensIda?.[0],
+    return: departData.passagensVolta?.[0],
+  };
+};
+
+(async () => {
+  const data = await fetchJourneys();
+  if (!data) return;
+
+  if (!data.depart && !data.return) {
+    const departDate = formatDate(DEPART_DATE);
+    const returnDate = formatDate(RETURN_DATE);
+    await sendAlert(
+      `Nenhuma passagem disponível para ${departDate} - ${returnDate} ainda 😔`
+    );
+    return;
+  }
+
+  const departJourney = formatJourney(data.depart);
+  const returnJourney = formatJourney(data.return);
+
+  await sendAlert(
+    [
+      "**Encontrei passagens!** 🚂💕",
+      `**↗️ Ida:** ${departJourney}`,
+      `**↗️ Volta:** ${returnJourney}`,
+    ].join("\n")
+  );
+})();
