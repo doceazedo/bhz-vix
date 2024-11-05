@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 type ValeResponse = {
   excessao: any;
   descricaoOrigem: string;
@@ -150,9 +148,9 @@ const fetchJourneys = async () => {
   };
 };
 
-(async () => {
+export default eventHandler(async (event) => {
   const data = await fetchJourneys();
-  if (!data) return;
+  if (!data) return new Response(undefined, { status: 500 });
 
   if (!data.depart && !data.return) {
     const departDate = formatDate(DEPART_DATE);
@@ -160,7 +158,7 @@ const fetchJourneys = async () => {
     await sendAlert(
       `Nenhuma passagem disponível para ${departDate} - ${returnDate} ainda 😔`
     );
-    return;
+    return new Response(undefined, { status: 200 });
   }
 
   const departJourney = formatJourney(data.depart);
@@ -174,4 +172,5 @@ const fetchJourneys = async () => {
       `<@&1303500039582126153>`,
     ].join("\n")
   );
-})();
+  return new Response(undefined, { status: 204 });
+});
