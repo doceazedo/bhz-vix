@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 type ValeResponse = {
   excessao: any;
   descricaoOrigem: string;
@@ -77,8 +79,21 @@ const formatJourney = (journey: any) => {
   }`;
 };
 
-const sendAlert = async (message: string) => {
-  console.log(message);
+const sendAlert = async (content: string) => {
+  try {
+    fetch(`${process.env.DISCORD_WEBHOOK_URL}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content,
+        allowed_mentions: {
+          parse: ["roles"],
+        },
+      }),
+    });
+  } catch (error) {}
 };
 
 const fetchJourney = async (date: Date) => {
@@ -155,7 +170,8 @@ const fetchJourneys = async () => {
     [
       "**Encontrei passagens!** 🚂💕",
       `**↗️ Ida:** ${departJourney}`,
-      `**↗️ Volta:** ${returnJourney}`,
+      `**↙️ Volta:** ${returnJourney}`,
+      `<@&1303500039582126153>`,
     ].join("\n")
   );
 })();
