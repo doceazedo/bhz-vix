@@ -149,6 +149,11 @@ const fetchJourneys = async () => {
 };
 
 export default eventHandler(async (event) => {
+  const authToken = event.headers.get("Authorization");
+  if (authToken !== `Bearer ${process.env.AUTH_TOKEN}`) {
+    return new Response(undefined, { status: 401 });
+  }
+
   const data = await fetchJourneys();
   if (!data) return new Response(undefined, { status: 500 });
 
