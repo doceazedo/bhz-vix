@@ -144,7 +144,7 @@ const fetchJourneys = async () => {
   if (!departData || !returnData) return null;
   return {
     depart: departData.passagensIda?.[0],
-    return: departData.passagensVolta?.[0],
+    return: returnData.passagensIda?.[0],
   };
 };
 
