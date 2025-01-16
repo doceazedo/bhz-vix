@@ -174,7 +174,7 @@ export default eventHandler(async (event) => {
       "**Encontrei passagens!** 🚂💕",
       `**↗️ Ida:** ${departJourney}`,
       `**↙️ Volta:** ${returnJourney}`,
-      `<@&1303500039582126153>`,
+      data.depart && data.return ? `<@&1303500039582126153>` : '',
     ].join("\n")
   );
   return new Response(undefined, { status: 204 });
