@@ -60,8 +60,8 @@ type ValeResponse = {
   buscarPorSubTrecho: any;
 };
 
-const DEPART_DATE = new Date("2025-02-28");
-const RETURN_DATE = new Date("2025-03-05");
+const DEPART_DATE = new Date("2025-02-28 GMT-3");
+const RETURN_DATE = new Date("2025-03-05 GMT-3");
 
 const formatDate = (date: Date) =>
   new Intl.DateTimeFormat("pt-BR").format(date);
